@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:amq="http://activemq.apache.org/schema/core"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+			   http://www.springframework.org/schema/beans/spring-beans.xsd
+			   http://camel.apache.org/schema/spring
+			   http://camel.apache.org/schema/spring/camel-spring.xsd
+			   http://activemq.apache.org/schema/core
+			   http://activemq.apache.org/schema/core/activemq-core.xsd">
+
+  <!-- A connection to ActiveMQ -->  
+  <amq:broker useJmx="false" persistent="false">
+    <amq:transportConnectors>
+      <amq:transportConnector name="mqtt" uri="mqtt://0.0.0.0:1883" />
+    </amq:transportConnectors>
+  </amq:broker>
+
+
+  <bean id="activemq" class="org.apache.activemq.camel.component.ActiveMQComponent">
+    <property name="brokerURL" value="tcp://localhost:61616" />
+    <property name="userName" value="karaf" />
+    <property name="password" value="karaf" />
+  </bean>
+
+  <camelContext streamCache="true"
+		xmlns="http://camel.apache.org/schema/spring"
+		xmlns:_ord="http://www.ibm.com/xmlns/prod/commerce/9/order"
+		xmlns:_wcf="http://www.ibm.com/xmlns/prod/commerce/9/foundation">
+
+    <route>
+      <from uri="mqtt:bar?host=tcp://0.0.0.0:1883&amp;subscribeTopicNames=xdk/mqtt/temp"/>
+      <log message="${body}"/>
+      <to uri="file:mqtt/log"/>
+    </route>
+
+    <route>
+      <from uri="jetty:http://0.0.0.0:9000/orders"/>
+      <log message="${body}"/>
+      <to uri="mqtt:web?host=tcp://0.0.0.0:1883&amp;subscribeTopicNames=xdk/mqtt/temp"/>
+  </camelContext>
+</beans>
