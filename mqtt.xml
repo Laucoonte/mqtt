@@ -24,9 +24,7 @@
   </bean>
 
   <camelContext streamCache="true"
-		xmlns="http://camel.apache.org/schema/spring"
-		xmlns:_ord="http://www.ibm.com/xmlns/prod/commerce/9/order"
-		xmlns:_wcf="http://www.ibm.com/xmlns/prod/commerce/9/foundation">
+		xmlns="http://camel.apache.org/schema/spring">
 
     <route>
       <from uri="mqtt:bar?host=tcp://0.0.0.0:1883&amp;subscribeTopicNames=xdk/mqtt/temp"/>
@@ -35,8 +33,19 @@
     </route>
 
     <route>
-      <from uri="jetty:http://0.0.0.0:9000/orders"/>
-      <log message="${body}"/>
-      <to uri="mqtt:web?host=tcp://0.0.0.0:1883&amp;subscribeTopicNames=xdk/mqtt/temp"/>
+      <from uri="jetty:http://0.0.0.0:8001/orders"/>
+      <choice>
+	<when>
+	  <simple>${header.CamelHttpMethod} == 'POST'</simple>
+	  <log message="${body}"/>
+	  <to uri="mqtt:web?host=tcp://0.0.0.0:1883&amp;publishTopicName=xdk/mqtt/inc"/>
+	</when>
+	<otherwise>
+          <setBody>
+	    <simple>&lt;h1&gt;This is MQTT endpoint &lt;/h1&gt;</simple>
+          </setBody>
+	</otherwise>
+      </choice>
+    </route>
   </camelContext>
 </beans>
